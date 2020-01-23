@@ -20,6 +20,23 @@ LOG = logging.getLogger(__name__)
 
 def apply(recipes, pixels, expand, source=None):
     data = pixels.data
+    
+    if "algorithm" in recipes:
+        algorithm = recipes["algorithm"]
+        band_numbers = list(set([i[:2] for i in algorithm.split("B")[1:]]))
+        formatted_algorithm = algorithm
+        for i, band in enumerate(band_numbers):
+            formatted_algorithm = formatted_algorithm.replace(
+                f'B{band}',
+                f'data[{int(band)-1}]'
+            )
+        scope = locals()
+        data = np.array(
+            [eval(i, scope) for i in formatted_algorithm.split(",")]
+        )
+        if data.ndim == 2:
+            data = np.expand_dims(data, axis=0)
+
     colormap = pixels.colormap
     if np.issubdtype(data.dtype, np.floating):
         dtype_min = np.finfo(data.dtype).min
